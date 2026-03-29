@@ -51,6 +51,7 @@ public class SessionRegistry {
                 }
             } catch (Exception e) {
                 log.error("Broadcast message to session {} failed: {}", session.getId(), e.getMessage(), e);
+                removeSession(session);
             }
         }
     }
