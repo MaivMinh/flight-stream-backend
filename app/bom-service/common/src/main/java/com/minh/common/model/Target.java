@@ -16,8 +16,16 @@ public class Target implements Serializable {
     public Double lon;
     public Double alt;
     public Double velocity;
+    public Double angularVelocity;
     public String type;
     public Integer currentWaypointIndex = 0;
     public String status = "FLYING";  /// "FLYING", "COMPLETED".
     public Long timestamp;
+    public Double centerLat;
+    public Double centerLon;
+    public Double radius;
+    public Double endLat;
+    public Double endLon;
+    public Double nextLat;
+    public Double nextLon;
 }

@@ -5,10 +5,7 @@ import com.minh.simulator_service.config.SimulationTarget;
 import com.minh.simulator_service.config.SimulatorConfig;
 import com.minh.simulator_service.config.TrajectoryConfig;
 import com.minh.common.model.Target;
-import com.minh.simulator_service.trajectory.CircleTrajectory;
-import com.minh.simulator_service.trajectory.StraightTrajectory;
-import com.minh.simulator_service.trajectory.Trajectory;
-import com.minh.simulator_service.trajectory.ZigzagTrajectory;
+import com.minh.simulator_service.trajectory.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,13 +18,37 @@ public class TargetGenerator {
         List<SimulationTarget> result = new ArrayList<>();
         int id = 0;
         for (Scenario scenario : config.getScenarios()) {
+            String trajectoryType = scenario.getTrajectoryConfig().getType();
             for (int i = 0; i < scenario.getTargetCount(); i++) {
                 Target target = new Target();
                 target.setId(id++);
                 target.setType(scenario.getType()); /// Alley, Enemy, Undefined.
-                Double vMin = scenario.getVelocityRange().getMin();
-                Double vMax = scenario.getVelocityRange().getMax();
-                target.setVelocity(vMin + (vMax - vMin) * RANDOM.nextDouble());
+                if (!"CIRCLE".equals(trajectoryType)) {
+                    /// Nếu không phải là quỹ đạo tròn thì mới tính vận tốc ban đầu kiểu này.
+                    Double vMin = scenario.getVelocityRange().getMin();
+                    Double vMax = scenario.getVelocityRange().getMax();
+                    target.setVelocity(vMin + (vMax - vMin) * RANDOM.nextDouble());
+                    target.setCenterLat(null);
+                    target.setCenterLon(null);
+                    target.setRadius(null);
+                    if ("STRAIGHT".equals(trajectoryType)) {
+                        /// Quỹ đạo thẳng thì set vị trí cuối cùng.
+                        target.endLat = scenario.getTrajectoryConfig().getEnd().getLat();
+                        target.endLon = scenario.getTrajectoryConfig().getEnd().getLon();
+                    } else {
+                        /// Quỹ đạo zigzag thì set vị trí điểm tiếp theo.
+                        if (scenario.getTrajectoryConfig().getPoints().size() > 1) {
+                            target.nextLat = scenario.getTrajectoryConfig().getPoints().get(1).getLat();
+                            target.nextLon = scenario.getTrajectoryConfig().getPoints().get(1).getLon();
+                        }
+                    }
+                } else {
+                    target.setVelocity(null);  /// Tạm thời gán null.
+                    target.setAngularVelocity(null);
+                    target.setCenterLat(scenario.getTrajectoryConfig().getCenter().getLat());
+                    target.setCenterLon(scenario.getTrajectoryConfig().getCenter().getLon());
+                    target.setRadius(scenario.getTrajectoryConfig().getRadius());
+                }
                 Trajectory trajectory = createTrajectory(scenario.getTrajectoryConfig(), target, i, scenario.getTargetCount());
                 SimulationTarget simulationTarget = new SimulationTarget(target, trajectory);
                 result.add(simulationTarget);
@@ -43,6 +64,11 @@ public class TargetGenerator {
                 double centerLat = trajectory.getCenter().getLat();
                 double centerLon = trajectory.getCenter().getLon();
                 double radius = trajectory.getRadius();
+                /// Tính velocity ban đầu dựa vào angular velocity và bán kính.
+                AngularVelocityRange range = trajectory.getAngularVelocityRange();
+                double angularVelocity = range.min + (range.max - range.min) * RANDOM.nextDouble();
+                target.setVelocity(angularVelocity * radius);
+                target.setAngularVelocity(angularVelocity);
 
                 target.lat = centerLat + radius * Math.cos(angle);
                 target.lon = centerLon + radius * Math.sin(angle);
@@ -52,7 +78,7 @@ public class TargetGenerator {
                         trajectory.getCenter().getLat(),
                         trajectory.getCenter().getLon(),
                         trajectory.getRadius(),
-                        trajectory.getAngularVelocity(),
+                        angularVelocity,
                         angle
                 );
             }

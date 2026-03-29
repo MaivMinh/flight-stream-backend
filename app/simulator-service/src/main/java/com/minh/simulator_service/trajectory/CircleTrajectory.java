@@ -23,15 +23,12 @@ public class CircleTrajectory implements Trajectory {
         double lon1 = Math.toRadians(centerLon);
         double angularDistance = radius / earthRadius;
 
-        double newLat = Math.asin(
-                Math.sin(lat1) * Math.cos(angularDistance)
-                        + Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(angle)
-        );
+        double newLat = Math.asin(Math.sin(lat1) * Math.cos(angularDistance)
+                + Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(angle));
 
         double newLon = lon1 + Math.atan2(
                 Math.sin(angle) * Math.sin(angularDistance) * Math.cos(lat1),
-                Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(newLat)
-        );
+                Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(newLat));
 
         target.lat = Math.toDegrees(newLat);
         target.lon = Math.toDegrees(newLon);
