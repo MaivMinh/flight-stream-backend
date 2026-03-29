@@ -51,6 +51,8 @@ public class ZigzagTrajectory implements Trajectory {
             target.lat = next.getLat();
             target.lon = next.getLon();
             target.currentWaypointIndex++;
+            target.nextLat = (target.currentWaypointIndex + 1 < points.size()) ? points.get(target.currentWaypointIndex + 1).getLat() : points.get(target.currentWaypointIndex).getLat();
+            target.nextLon = (target.currentWaypointIndex + 1 < points.size()) ? points.get(target.currentWaypointIndex + 1).getLon() : points.get(target.currentWaypointIndex).getLon();
             return;
         }
 
