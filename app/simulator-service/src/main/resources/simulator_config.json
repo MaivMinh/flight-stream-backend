@@ -1,0 +1,216 @@
+{
+  "intervalMs": 250,
+  "threads": 4,
+  "scenarios": [
+    {
+      "name": "ALLY_CIRCLE",
+      "type": "ALLY",
+      "targetCount": 2000,
+      "trajectoryConfig": {
+        "type": "CIRCLE",
+        "center": {
+          "lat": 21.0285,
+          "lon": 105.8542,
+          "alt": 1000
+        },
+        "radius": 1000,
+        "angularVelocity": 0.0002
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    },
+    {
+      "name": "ALLY_STRAIGHT",
+      "type": "ALLY",
+      "targetCount": 1000,
+      "trajectoryConfig": {
+        "type": "STRAIGHT",
+        "start": {
+          "lat": 21.01,
+          "lon": 105.80,
+          "alt": 1000
+        },
+        "end": {
+          "lat": 21.05,
+          "lon": 105.90,
+          "alt": 1000
+        }
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    },
+    {
+      "name": "ALLY_ZIGZAG",
+      "type": "ALLY",
+      "targetCount": 1000,
+      "trajectoryConfig": {
+        "type": "ZIGZAG",
+        "points": [
+          {
+            "lat": 21.01,
+            "lon": 105.80,
+            "alt": 1000
+          },
+          {
+            "lat": 21.03,
+            "lon": 105.85,
+            "alt": 1000
+          },
+          {
+            "lat": 21.00,
+            "lon": 105.90,
+            "alt": 1000
+          }
+        ]
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    },
+    {
+      "name": "ENEMY_CIRCLE",
+      "type": "ENEMY",
+      "targetCount": 1000,
+      "trajectoryConfig": {
+        "type": "CIRCLE",
+        "center": {
+          "lat": 21.04,
+          "lon": 105.88,
+          "alt": 1000
+        },
+        "radius": 15000,
+        "angularVelocity": 0.0003
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    },
+    {
+      "name": "ENEMY_STRAIGHT",
+      "type": "ENEMY",
+      "targetCount": 1000,
+      "trajectoryConfig": {
+        "type": "STRAIGHT",
+        "start": {
+          "lat": 21.00,
+          "lon": 105.75,
+          "alt": 1000
+        },
+        "end": {
+          "lat": 21.06,
+          "lon": 105.95,
+          "alt": 1000
+        }
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    },
+    {
+      "name": "ENEMY_ZIGZAG",
+      "type": "ENEMY",
+      "targetCount": 1000,
+      "trajectoryConfig": {
+        "type": "ZIGZAG",
+        "points": [
+          {
+            "lat": 21.02,
+            "lon": 105.82,
+            "alt": 1000
+          },
+          {
+            "lat": 21.05,
+            "lon": 105.87,
+            "alt": 1000
+          },
+          {
+            "lat": 21.01,
+            "lon": 105.92,
+            "alt": 1000
+          }
+        ]
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    },
+    {
+      "name": "UNDEFINED_CIRCLE",
+      "type": "UNDEFINED",
+      "targetCount": 1000,
+      "trajectoryConfig": {
+        "type": "CIRCLE",
+        "center": {
+          "lat": 21.03,
+          "lon": 105.86,
+          "alt": 1000
+        },
+        "radius": 2000,
+        "angularVelocity": 0.0001
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    },
+    {
+      "name": "UNDEFINED_STRAIGHT",
+      "type": "UNDEFINED",
+      "targetCount": 1000,
+      "trajectoryConfig": {
+        "type": "STRAIGHT",
+        "start": {
+          "lat": 21.02,
+          "lon": 105.78,
+          "alt": 1000
+        },
+        "end": {
+          "lat": 21.07,
+          "lon": 105.93,
+          "alt": 1000
+        }
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    },
+    {
+      "name": "UNDEFINED_ZIGZAG",
+      "type": "UNDEFINED",
+      "targetCount": 1000,
+      "trajectoryConfig": {
+        "type": "ZIGZAG",
+        "points": [
+          {
+            "lat": 21.01,
+            "lon": 105.79,
+            "alt": 1000
+          },
+          {
+            "lat": 21.04,
+            "lon": 105.84,
+            "alt": 1000
+          },
+          {
+            "lat": 21.02,
+            "lon": 105.91,
+            "alt": 1000
+          }
+        ]
+      },
+      "velocityRange": {
+        "min": 10,
+        "max": 50
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: tracking-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  threads:
+    virtual:
+      enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+      timeout: 2000
+      repositories:
+        enabled: false
+server:
+  port: 8081
+
+influxdb:
+  url: ${INFLUXDB_URL:http://localhost:8086}
+  token: ${INFLUXDB_TOKEN:fpFzDqcOl_BInwiQUl00JTAT8DwS9cKXq42TkDYjMwrPCgBgJ02Jcd3MnxV1Dy0Q1QVmCBjSMn9afJ_ZD7YAdg==}
+  org: ${INFLUXDB_ORG:Viettel}
+  bucket: ${INFLUXDB_BUCKET:flight-tracking}
