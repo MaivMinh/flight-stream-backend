@@ -10,48 +10,42 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SessionRegistry {
-    private final ObjectMapper objectMapper;
-    private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    private final Map<String, SessionWrapper> sessions = new ConcurrentHashMap<>();
 
     public void addSession(WebSocketSession session) {
-        sessions.put(session.getId(), session);
+        sessions.put(session.getId(), new SessionWrapper(session));
     }
 
     public void removeSession(WebSocketSession session) {
-        sessions.remove(session.getId(), session);
+        SessionWrapper wrapper = sessions.remove(session.getId());
+        if (wrapper != null) {
+            wrapper.stop();
+        }
     }
 
-    public List<WebSocketSession> getAllSessions() {
+    public List<SessionWrapper> getAllSessions() {
         return sessions.values().stream().toList();
     }
 
     public void broadcast(List<Target> payload) {
         String json;
         try {
-            json = Objects.requireNonNull(objectMapper.writeValueAsString(payload));
+            json = new ObjectMapper().writeValueAsString(payload);
         } catch (Exception e) {
-            log.error("Serialize broadcast payload failed: {}", e.getMessage(), e);
             return;
         }
         TextMessage message = new TextMessage(json);
-        for (WebSocketSession session : getAllSessions()) {
-            if (!session.isOpen()) {
-                continue;   /// Chuyển sang session tiếp.
-            }
+        for (SessionWrapper wrapper : getAllSessions()) {
             try {
-                synchronized (session) {
-                    session.sendMessage(message);
-                }
+                wrapper.send(message);
             } catch (Exception e) {
-                log.error("Broadcast message to session {} failed: {}", session.getId(), e.getMessage(), e);
-                removeSession(session);
+                removeSession(wrapper.getSession());
             }
         }
     }
