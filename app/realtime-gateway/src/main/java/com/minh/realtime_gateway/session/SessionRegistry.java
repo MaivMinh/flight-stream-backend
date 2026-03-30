@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,8 @@ public class SessionRegistry {
     private final Map<String, SessionWrapper> sessions = new ConcurrentHashMap<>();
 
     public void addSession(WebSocketSession session) {
-        sessions.put(session.getId(), sessionWrapperFactory.create(session));
+        ConcurrentWebSocketSessionDecorator sessionDecorator = new ConcurrentWebSocketSessionDecorator(session, 5000, 8000000);
+        sessions.put(session.getId(), sessionWrapperFactory.create(sessionDecorator));
     }
 
     public void removeSession(WebSocketSession session) {
