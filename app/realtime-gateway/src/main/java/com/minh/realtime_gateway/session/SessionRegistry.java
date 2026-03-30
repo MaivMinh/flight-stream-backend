@@ -16,10 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @RequiredArgsConstructor
 public class SessionRegistry {
+    private final ObjectMapper objectMapper;
+    private final SessionWrapperFactory sessionWrapperFactory;
     private final Map<String, SessionWrapper> sessions = new ConcurrentHashMap<>();
 
     public void addSession(WebSocketSession session) {
-        sessions.put(session.getId(), new SessionWrapper(session));
+        sessions.put(session.getId(), sessionWrapperFactory.create(session));
     }
 
     public void removeSession(WebSocketSession session) {
@@ -36,7 +38,7 @@ public class SessionRegistry {
     public void broadcast(List<Target> payload) {
         String json;
         try {
-            json = new ObjectMapper().writeValueAsString(payload);
+            json = objectMapper.writeValueAsString(payload);
         } catch (Exception e) {
             return;
         }

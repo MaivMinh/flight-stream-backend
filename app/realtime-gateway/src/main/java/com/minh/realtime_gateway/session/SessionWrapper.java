@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.io.IOException;
 import java.util.Objects;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
@@ -16,23 +16,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Setter
 public class SessionWrapper {
     private final WebSocketSession session;
+    private final ExecutorService senderExecutor;
     private final BlockingQueue<TextMessage> messagesQueue = new LinkedBlockingQueue<>(500);
     private final AtomicBoolean isRunning = new AtomicBoolean(true);
-    private Thread workerThread;
+    private Future<?> senderTask;
 
-    public SessionWrapper(WebSocketSession session) {
+    public SessionWrapper(WebSocketSession session, ExecutorService senderExecutor) {
         this.session = session;
+        this.senderExecutor = senderExecutor;
         startWorker();
     }
 
     private void startWorker() {
-        workerThread = new Thread(() -> {
+        senderTask = senderExecutor.submit(() -> {
             try {
                 while (isRunning.get() && session.isOpen()) {
                     TextMessage msg = messagesQueue.take();
                     session.sendMessage(msg);
                 }
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | IOException e) {
                 log.error("Worker thread interrupted for session {}: {}", session.getId(), e.getMessage(), e);
             } catch (Exception e) {
                 log.error("Error sending message for session {}: {}", session.getId(), e.getMessage(), e);
@@ -41,10 +43,10 @@ public class SessionWrapper {
                 try {
                     session.close();
                 } catch (Exception ignored) {
+                    log.error("Error when closing session {}: {}", session.getId(), ignored.getMessage(), ignored);
                 }
             }
         });
-        workerThread.start();
     }
 
     public void send(TextMessage message) {
@@ -58,8 +60,8 @@ public class SessionWrapper {
 
     public void stop() {
         isRunning.set(false);
-        if (Objects.nonNull(workerThread)) {
-            workerThread.interrupt();
+        if (Objects.nonNull(senderTask)) {
+            senderTask.cancel(true);
         }
     }
 }

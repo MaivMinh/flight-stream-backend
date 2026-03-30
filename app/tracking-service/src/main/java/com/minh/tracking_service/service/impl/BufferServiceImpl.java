@@ -18,10 +18,10 @@ public class BufferServiceImpl implements BufferService {
     @Async
     public void addBatch(List<Target> targets) {
         for (Target target : targets) {
-            try {
-                queue.put(target);  /// Phải chờ nếu queue đầy.
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            if (!queue.offer(target)) {
+                // Nếu queue đầy, lấy phần tử cũ nhất ra để nhường chỗ cho phần tử mới.
+                queue.poll();
+                queue.offer(target);
             }
         }
     }

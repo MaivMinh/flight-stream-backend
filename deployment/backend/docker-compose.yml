@@ -38,6 +38,21 @@ services:
           cpus: "1"
           memory: 256m
 
+  questdb:
+    image: questdb/questdb:9.1.0
+    container_name: questdb
+    ports:
+      - "9000:9000"
+      - "8812:8812"
+      - "9009:9009"
+    networks:
+      - realtime-net
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1g
+
   # =======================
   # Kafka (KRaft)
   # =======================
@@ -98,10 +113,20 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
       - INSTANCE_ID=rt-1
+      - QUESTDB_SENDER_CONFIG=http::addr=questdb:9000;auto_flush=off;retry_timeout=10000;
+      - QUESTDB_PG_HOST=questdb
+      - QUESTDB_PG_PORT=8812
+      - QUESTDB_DATABASE=qdb
+      - QUESTDB_USERNAME=admin
+      - QUESTDB_PASSWORD=quest
+      - QUESTDB_TABLE=positions
+      - QUESTDB_RETENTION_DAYS=7
     ports:
       - "8081:8081"
     networks:
       - realtime-net
+    depends_on:
+      - questdb
     deploy:
       resources:
         limits:
