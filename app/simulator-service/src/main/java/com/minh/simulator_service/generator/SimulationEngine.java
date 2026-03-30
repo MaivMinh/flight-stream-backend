@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -20,16 +21,16 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class SimulationEngine {
-    private final List<SimulationTarget> simulationTargets;
-    private final ExecutorService workerPool;
     private final KafkaTemplate<String, Target> producer;
     private final ObjectMapper objectMapper;
+    private final String configData;
+    private ExecutorService workerPool;
+    private ScheduledExecutorService scheduler;
 
     public SimulationEngine(KafkaTemplate<String, Target> producer, ObjectMapper objectMapper) {
         this.producer = producer;
         this.objectMapper = objectMapper;
-
-        String data = """
+        this.configData = """
                  {
                    "scenarios": [
                      {
@@ -242,24 +243,33 @@ public class SimulationEngine {
                    ]
                  }
                 \s""";
-
-        List<SimulationTarget> parsedTargets = new ArrayList<>();
-
-        try {
-            SimulatorConfig config = objectMapper.readValue(data, SimulatorConfig.class);
-            parsedTargets = TargetGenerator.generateTargets(config);
-        } catch (Exception e) {
-            log.error("Failed to parse simulator configuration: ", e);
-        }
-        this.workerPool = Executors.newFixedThreadPool(8);
-        this.simulationTargets = parsedTargets;
     }
 
 
     public void start(long intervalMs, int shardNum) {
+        log.info("Starting simulation engine with interval {}ms and {} shards", intervalMs, shardNum);
+        
+        if (Objects.nonNull(workerPool) && !workerPool.isShutdown()) {
+            log.warn("Worker pool is already running, stopping first");
+            stop();
+        }
+        
+        log.info("Generating new simulation targets from configuration");
+        List<SimulationTarget> simulationTargets;
+        try {
+            SimulatorConfig config = objectMapper.readValue(configData, SimulatorConfig.class);
+            simulationTargets = TargetGenerator.generateTargets(config);
+            log.info("Generated {} simulation targets", simulationTargets.size());
+        } catch (Exception e) {
+            log.error("Failed to parse simulator configuration: ", e);
+            return;
+        }
+        
+        workerPool = Executors.newFixedThreadPool(8);
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        
         List<List<SimulationTarget>> shards = sharding(simulationTargets, shardNum);
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-
+        
         scheduler.scheduleAtFixedRate(() -> {
             for (List<SimulationTarget> shard : shards) {
                 workerPool.submit(() -> {
@@ -267,6 +277,7 @@ public class SimulationEngine {
                 });
             }
         }, 0, intervalMs, TimeUnit.MILLISECONDS);
+        log.info("Simulation engine started successfully");
     }
 
     private void processShard(List<SimulationTarget> shard, long intervalMs) {
@@ -280,10 +291,10 @@ public class SimulationEngine {
         }
     }
 
-    private List<List<SimulationTarget>> sharding(List<SimulationTarget> simulationTargets, Integer threads) {
+    private List<List<SimulationTarget>> sharding(List<SimulationTarget> simulationTargets, Integer shardNum) {
         List<List<SimulationTarget>> shards = new ArrayList<>();
         int size = simulationTargets.size();
-        int segment = (size + threads - 1) / threads;
+        int segment = (size + shardNum - 1) / shardNum;
         for (int i = 0; i < size; i += segment) {
             shards.add(simulationTargets.subList(i, Math.min(i + segment, size)));
         }
@@ -291,18 +302,37 @@ public class SimulationEngine {
     }
 
     public void stop() {
-        workerPool.shutdown();
-        try {
-            if (!workerPool.awaitTermination(5, TimeUnit.SECONDS)) {
-                List<Runnable> dropped = workerPool.shutdownNow();
-                log.warn("Worker pool didn't terminate, cancelled {} tasks", dropped.size());
-                if (!workerPool.awaitTermination(5, TimeUnit.SECONDS)) {
-                    log.error("Worker pool did not terminate");
+        log.info("Stopping simulation engine");
+        
+        if (Objects.nonNull(scheduler) && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                    log.warn("Scheduler forced shutdown");
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                scheduler.shutdownNow();
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            workerPool.shutdownNow();
         }
+        
+        if (Objects.nonNull(workerPool) && !workerPool.isShutdown()) {
+            workerPool.shutdown();
+            try {
+                if (!workerPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                    List<Runnable> dropped = workerPool.shutdownNow();
+                    log.warn("Worker pool didn't terminate, cancelled {} tasks", dropped.size());
+                    if (!workerPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                        log.error("Worker pool did not terminate");
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                workerPool.shutdownNow();
+            }
+        }
+        
+        log.info("Simulation engine stopped");
     }
 }
