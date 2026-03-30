@@ -12,7 +12,7 @@ public class SimulatorController {
     private final SimulationEngine engine;
 
     @GetMapping("/start")
-    public ResponseEntity<Void> startSimulation(@RequestParam(name = "interval", defaultValue = "1000") long interval,
+    public ResponseEntity<Void> startSimulation(@RequestParam(name = "interval", defaultValue = "280") long interval,
                                                 @RequestParam(name = "shard", defaultValue = "4") int shards) {
         engine.start(interval, shards);
         return ResponseEntity.ok().build();
