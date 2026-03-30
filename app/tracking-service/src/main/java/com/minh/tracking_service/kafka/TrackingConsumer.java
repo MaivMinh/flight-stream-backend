@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SimulationConsumer {
+public class TrackingConsumer {
     private final BufferService bufferService;
 
     @KafkaListener(

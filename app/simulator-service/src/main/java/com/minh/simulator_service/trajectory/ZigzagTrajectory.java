@@ -2,6 +2,7 @@ package com.minh.simulator_service.trajectory;
 
 import com.minh.common.model.Point;
 import com.minh.common.model.Target;
+import com.minh.simulator_service.enums.TargetStatus;
 
 import java.util.List;
 
@@ -14,14 +15,14 @@ public class ZigzagTrajectory implements Trajectory {
 
     @Override
     public void update(Target target, Long deltaMs) {
-        if (!"FLYING".equals(target.getStatus())) return;
+        if (!TargetStatus.FLYING.name().equals(target.getStatus())) return;
         if (points == null || points.size() < 2) return;
 
         int idx = target.currentWaypointIndex;
 
         // đã tới điểm cuối
         if (idx >= points.size() - 1) {
-            target.status = "COMPLETED";
+            target.status = TargetStatus.COMPLETED.name();
             return;
         }
 

@@ -19,7 +19,7 @@ public class Target implements Serializable {
     public Double angularVelocity;
     public String type;
     public Integer currentWaypointIndex = 0;
-    public String status = "FLYING";  /// "FLYING", "COMPLETED".
+    public String status;
     public Long timestamp;
     public Double centerLat;
     public Double centerLon;

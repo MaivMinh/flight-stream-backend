@@ -5,6 +5,7 @@ import com.minh.simulator_service.config.SimulationTarget;
 import com.minh.simulator_service.config.SimulatorConfig;
 import com.minh.simulator_service.config.TrajectoryConfig;
 import com.minh.common.model.Target;
+import com.minh.simulator_service.enums.TargetStatus;
 import com.minh.simulator_service.trajectory.*;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class TargetGenerator {
                 Target target = new Target();
                 target.setId(id++);
                 target.setType(scenario.getType()); /// Alley, Enemy, Undefined.
+                target.setStatus(TargetStatus.FLYING.name());
                 if (!"CIRCLE".equals(trajectoryType)) {
                     /// Nếu không phải là quỹ đạo tròn thì mới tính vận tốc ban đầu kiểu này.
                     Double vMin = scenario.getVelocityRange().getMin();

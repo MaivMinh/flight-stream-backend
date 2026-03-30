@@ -10,7 +10,5 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class SimulatorConfig {
-    private Long intervalMs;
-    private Integer threads;
     private List<Scenario> scenarios;
 }

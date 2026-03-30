@@ -7,6 +7,7 @@ services:
   nginx:
     image: nginx:latest
     container_name: nginx
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
@@ -28,8 +29,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
     networks:
       - realtime-net
     deploy:
@@ -41,12 +41,15 @@ services:
   questdb:
     image: questdb/questdb:9.1.0
     container_name: questdb
-    ports:
-      - "9000:9000"
-      - "8812:8812"
-      - "9009:9009"
+    restart: unless-stopped
     networks:
       - realtime-net
+    ports:
+      - "9000:9000"   # HTTP API
+      - "8812:8812"   # PostgreSQL Wire Protocol
+      - "9009:9009"   # Line Protocol
+    volumes:
+      - ./questdb:/var/lib/questdb
     deploy:
       resources:
         limits:
@@ -89,12 +92,11 @@ services:
   # =======================
   simulator-service:
     image: simulator-service:1.0
+    restart: unless-stopped
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
       - INSTANCE_ID=rt-1
-    ports:
-      - "8082:8082"
     networks:
       - realtime-net
     deploy:
@@ -109,6 +111,7 @@ services:
   # =======================
   tracking-service:
     image: tracking-service:1.0
+    restart: unless-stopped
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
@@ -121,8 +124,6 @@ services:
       - QUESTDB_PASSWORD=quest
       - QUESTDB_TABLE=positions
       - QUESTDB_RETENTION_DAYS=7
-    ports:
-      - "8081:8081"
     networks:
       - realtime-net
     depends_on:
@@ -138,6 +139,7 @@ services:
   # =======================
   realtime-1:
     image: realtime-gateway:1.0
+    restart: unless-stopped
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
@@ -156,6 +158,7 @@ services:
 
   realtime-2:
     image: realtime-gateway:1.0
+    restart: unless-stopped
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis

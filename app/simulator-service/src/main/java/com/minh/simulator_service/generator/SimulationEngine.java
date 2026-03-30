@@ -5,21 +5,22 @@ import com.minh.common.kafka.KafkaTopics;
 import com.minh.common.model.Target;
 import com.minh.simulator_service.config.SimulationTarget;
 import com.minh.simulator_service.config.SimulatorConfig;
-import com.minh.simulator_service.loader.ConfigLoader;
+import com.minh.simulator_service.enums.TargetStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 public class SimulationEngine {
     private final List<SimulationTarget> simulationTargets;
-    private final Integer threads;
-    private final Long intervalMs;
     private final ExecutorService workerPool;
     private final KafkaTemplate<String, Target> producer;
     private final ObjectMapper objectMapper;
@@ -30,8 +31,6 @@ public class SimulationEngine {
 
         String data = """
                  {
-                   "intervalMs": 250,
-                   "threads": 4,
                    "scenarios": [
                      {
                        "name": "ALLY_CIRCLE",
@@ -244,81 +243,36 @@ public class SimulationEngine {
                  }
                 \s""";
 
-        long parsedInterval = 250;
-        int parsedThreads = 4;
         List<SimulationTarget> parsedTargets = new ArrayList<>();
 
         try {
             SimulatorConfig config = objectMapper.readValue(data, SimulatorConfig.class);
-            if (config.getIntervalMs() != null) parsedInterval = config.getIntervalMs();
-            if (config.getThreads() != null) parsedThreads = config.getThreads();
             parsedTargets = TargetGenerator.generateTargets(config);
         } catch (Exception e) {
             log.error("Failed to parse simulator configuration: ", e);
         }
-
-        this.intervalMs = parsedInterval;
-        this.threads = parsedThreads;
-        this.workerPool = Executors.newFixedThreadPool(this.threads);
+        this.workerPool = Executors.newFixedThreadPool(8);
         this.simulationTargets = parsedTargets;
     }
 
 
-    public void start() {
-        List<List<SimulationTarget>> shards = sharding(simulationTargets, threads);
+    public void start(long intervalMs, int shardNum) {
+        List<List<SimulationTarget>> shards = sharding(simulationTargets, shardNum);
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
         scheduler.scheduleAtFixedRate(() -> {
             for (List<SimulationTarget> shard : shards) {
                 workerPool.submit(() -> {
-                    processShard(shard);
+                    processShard(shard, intervalMs);
                 });
             }
         }, 0, intervalMs, TimeUnit.MILLISECONDS);
     }
 
-//    public void start() {
-//        List<List<SimulationTarget>> shards = sharding(simulationTargets, threads);
-//        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-//
-//        scheduler.scheduleWithFixedDelay(() -> {
-//            long tickStart = System.currentTimeMillis();
-//            CountDownLatch latch = new CountDownLatch(shards.size());
-//            for (List<SimulationTarget> shard : shards) {
-//                workerPool.submit(() -> {
-//                    String threadName = Thread.currentThread().getName();
-//                    long start = System.currentTimeMillis();
-//                    try {
-//                        processShard(shard);
-//                    } finally {
-//                        long end = System.currentTimeMillis();
-//                        long duration = end - start;
-//                        System.out.println(
-//                                "[THREAD] " + threadName +
-//                                        " | processed: " + shard.size() +
-//                                        " targets | time: " + duration + " ms"
-//                        );
-//                        latch.countDown();
-//                    }
-//                });
-//            }
-//
-//            try {
-//                latch.await(); // ⏳ đợi tất cả thread xong
-//            } catch (InterruptedException e) {
-//                Thread.currentThread().interrupt();
-//            }
-//
-//            long tickEnd = System.currentTimeMillis();
-//            System.out.println("=== TICK DONE | total time: " + (tickEnd - tickStart) + " ms ===");
-//
-//        }, 0, intervalMs, TimeUnit.MILLISECONDS);
-//    }
-
-    private void processShard(List<SimulationTarget> shard) {
+    private void processShard(List<SimulationTarget> shard, long intervalMs) {
         for (SimulationTarget simulation : shard) {
             Target target = simulation.getTarget();
-            if ("FLYING".equals(target.status)) {
+            if (!TargetStatus.COMPLETED.name().equals(target.status)) {
                 simulation.getTrajectory().update(target, intervalMs);
                 target.setTimestamp(System.currentTimeMillis());
                 producer.send(KafkaTopics.SIMULATION, target.getId().toString(), target);

@@ -2,6 +2,7 @@ package com.minh.simulator_service.trajectory;
 
 import com.minh.common.model.Point;
 import com.minh.common.model.Target;
+import com.minh.simulator_service.enums.TargetStatus;
 
 public class StraightTrajectory implements Trajectory {
     private final double endLat;
@@ -25,7 +26,7 @@ public class StraightTrajectory implements Trajectory {
 
     @Override
     public void update(Target t, Long deltaMs) {
-        if (!"FLYING".equals(t.getStatus())) return;
+        if (!TargetStatus.FLYING.name().equals(t.getStatus())) return;
         double distance = t.velocity * deltaMs / 1000.0; /// velocity (m/s). -> distance (m) = velocity (m/s) * time (s)
 
         /// Vì vị trí của thiết bị bay đang được biểu diễn bằng tọa độ (lat, lon), nên phải chuyển đổi từ mét -> đô.
@@ -50,7 +51,7 @@ public class StraightTrajectory implements Trajectory {
         if ((dxEnd * dxNext < 0) || (dyEnd * dyNext < 0)) {
             t.lat = endLat;
             t.lon = endLon;
-            t.status = "COMPLETED";
+            t.status = TargetStatus.COMPLETED.name();
             return;
         }
 

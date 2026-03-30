@@ -23,5 +23,4 @@ public class TrackingController {
         return ResponseEntity.status(response.getStatus())
                 .body(response);
     }
-
 }

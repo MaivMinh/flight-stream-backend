@@ -16,8 +16,13 @@ spring:
 server:
   port: 8081
 
-influxdb:
-  url: ${INFLUXDB_URL:http://localhost:8086}
-  token: ${INFLUXDB_TOKEN:fpFzDqcOl_BInwiQUl00JTAT8DwS9cKXq42TkDYjMwrPCgBgJ02Jcd3MnxV1Dy0Q1QVmCBjSMn9afJ_ZD7YAdg==}
-  org: ${INFLUXDB_ORG:Viettel}
-  bucket: ${INFLUXDB_BUCKET:flight-tracking}
+questdb:
+  sender-config: ${QUESTDB_SENDER_CONFIG:http::addr=localhost:9000;auto_flush=off;retry_timeout=10000;}
+  pg:
+    host: ${QUESTDB_PG_HOST:localhost}
+    port: ${QUESTDB_PG_PORT:8812}
+  database: ${QUESTDB_DATABASE:qdb}
+  username: ${QUESTDB_USERNAME:admin}
+  password: ${QUESTDB_PASSWORD:quest}
+  table: ${QUESTDB_TABLE:positions}
+  retention-days: ${QUESTDB_RETENTION_DAYS:7}
