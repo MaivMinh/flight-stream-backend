@@ -26,3 +26,13 @@ questdb:
   password: ${QUESTDB_PASSWORD:quest}
   table: ${QUESTDB_TABLE:positions}
   retention-days: ${QUESTDB_RETENTION_DAYS:7}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true

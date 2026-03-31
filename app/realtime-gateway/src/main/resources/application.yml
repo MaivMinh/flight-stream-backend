@@ -19,3 +19,13 @@ spring:
 logging:
   level:
     net.devh.boot.grpc.server: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
