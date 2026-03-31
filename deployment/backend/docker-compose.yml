@@ -16,6 +16,7 @@ services:
     depends_on:
       - realtime-1
       - realtime-2
+      - realtime-3
     networks:
       - realtime-net
     deploy:
@@ -99,7 +100,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.50"
+          cpus: "1.00"
           memory: 2560M
         reservations:
           cpus: "1.00"
@@ -217,7 +218,7 @@ services:
       resources:
         limits:
           cpus: "2.00"
-          memory: 1024M
+          memory: 768M
         reservations:
           cpus: "1"
           memory: 512M
@@ -242,7 +243,32 @@ services:
       resources:
         limits:
           cpus: "2.00"
-          memory: 1024M
+          memory: 768M
+        reservations:
+          cpus: "1"
+          memory: 512M
+
+  realtime-3:
+    image: maivanminh/realtime-gateway:1.0
+    restart: unless-stopped
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
+      - REDIS_HOST=redis
+      - INSTANCE_ID=realtime-3
+      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
+    depends_on:
+      kafka-service-10:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - realtime-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 768M
         reservations:
           cpus: "1"
           memory: 512M
@@ -268,10 +294,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.00"
+          cpus: "0.50"
           memory: 1024M
         reservations:
-          cpus: "0.50"
+          cpus: "0.25"
           memory: 512M
 
   prometheus:
@@ -292,11 +318,33 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.50"
+          cpus: "1.00"
           memory: 1536M
         reservations:
-          cpus: "0.75"
+          cpus: "0.50"
           memory: 768M
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: always
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
 
   grafana:
     container_name: grafana
