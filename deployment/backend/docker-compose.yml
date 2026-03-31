@@ -119,6 +119,8 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
       - INSTANCE_ID=simulator-1
+      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
     depends_on:
       kafka-service-10:
         condition: service_started
@@ -152,6 +154,8 @@ services:
       - QUESTDB_PASSWORD=quest
       - QUESTDB_TABLE=positions
       - QUESTDB_RETENTION_DAYS=7
+      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
     networks:
       - realtime-net
     depends_on:
@@ -178,6 +182,8 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
       - INSTANCE_ID=realtime-1
+      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
     depends_on:
       kafka-service-10:
         condition: service_started
@@ -201,6 +207,8 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
       - INSTANCE_ID=realtime-2
+      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
     depends_on:
       kafka-service-10:
           condition: service_started
@@ -217,6 +225,47 @@ services:
           cpus: "1"
           memory: 512M
 
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.82.0
+    restart: always
+    command:
+      - --config=/etc/otelcol-contrib/otel-collector.yml
+    volumes:
+      - ./data/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml
+    networks:
+      - realtime-net
+    ports:
+      - "1888:1888" # pprof extension
+      - "8888:8888" # Prometheus metrics exposed by the collector
+      - "8889:8889" # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP http receiver
+      - "55679:55679" # zpages extension
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    restart: always
+    networks:
+      - realtime-net
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./data/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    volumes:
+      - ./data/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    networks:
+      - realtime-net
+    ports:
+      - "3000:3000"
 
 networks:
   realtime-net:
