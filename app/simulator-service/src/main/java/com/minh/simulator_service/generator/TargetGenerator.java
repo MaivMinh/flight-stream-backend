@@ -60,6 +60,7 @@ public class TargetGenerator {
     }
 
     private static Trajectory createTrajectory(TrajectoryConfig trajectory, Target target, int index, int total) {
+        target.timestamp = System.currentTimeMillis();
         switch (trajectory.getType()) {
             case "CIRCLE": {
                 double angle = 2 * Math.PI * index / total;
@@ -75,7 +76,6 @@ public class TargetGenerator {
                 target.lat = centerLat + radius * Math.cos(angle);
                 target.lon = centerLon + radius * Math.sin(angle);
                 target.alt = trajectory.getCenter().getAlt();
-
                 return new CircleTrajectory(
                         trajectory.getCenter().getLat(),
                         trajectory.getCenter().getLon(),

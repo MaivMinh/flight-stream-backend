@@ -70,5 +70,6 @@ public class ZigzagTrajectory implements Trajectory {
 
         target.lat = Math.toDegrees(newLat);
         target.lon = Math.toDegrees(newLon);
+        target.timestamp = System.currentTimeMillis();
     }
 }
