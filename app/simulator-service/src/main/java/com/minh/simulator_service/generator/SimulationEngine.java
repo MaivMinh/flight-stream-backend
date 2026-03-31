@@ -285,7 +285,6 @@ public class SimulationEngine {
             Target target = simulation.getTarget();
             if (!TargetStatus.COMPLETED.name().equals(target.status)) {
                 simulation.getTrajectory().update(target, intervalMs);
-                /// target.setTimestamp(System.currentTimeMillis()); Bỏ phần này đi, vì sẽ sử dụng tools để trace backend.
                 producer.send(KafkaTopics.SIMULATION, target.getId().toString(), target);
             }
         }

@@ -21,20 +21,16 @@ public class TrackingRepository {
     @Value("${questdb.table}")
     private String tableName;
 
-    public List<Target> findRecentHistoryByTargetId(Integer targetId, int days, int limit) {
+    public List<Target> findRecentHistoryByTargetIdAndDays(Integer targetId, Timestamp fromTimeStamp, Timestamp toTimeStamp) {
         String sql = """
                 SELECT id, lat, lon, alt, velocity, angular_velocity, type, status, timestamp
                 FROM %s
                 WHERE id = ?
                   AND timestamp BETWEEN ? AND ?
                 ORDER BY timestamp DESC
-                LIMIT ?
                 """.formatted(tableName);
 
-        Timestamp from = Timestamp.from(Instant.now().minus(days, ChronoUnit.DAYS));
-        Timestamp to = Timestamp.from(Instant.now());
-
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapTarget(rs), String.valueOf(targetId), from, to, limit);
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapTarget(rs), String.valueOf(targetId), fromTimeStamp, toTimeStamp);
     }
 
     private Target mapTarget(ResultSet rs) throws SQLException {

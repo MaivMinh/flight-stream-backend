@@ -57,5 +57,6 @@ public class StraightTrajectory implements Trajectory {
 
         t.lat = nextLat;
         t.lon = nextLon;
+        t.timestamp = System.currentTimeMillis();
     }
 }
