@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class SessionWrapper {
     private final ConcurrentWebSocketSessionDecorator session;
     private final ExecutorService senderExecutor;
-    private final BlockingQueue<TextMessage> messagesQueue = new LinkedBlockingQueue<>(5000);
+    private final BlockingQueue<TextMessage> messagesQueue = new LinkedBlockingQueue<>(100);
     private final AtomicBoolean isRunning = new AtomicBoolean(true);
     private Future<?> senderTask;
 

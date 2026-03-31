@@ -38,6 +38,9 @@ public class SessionRegistry {
     }
 
     public void broadcast(List<Target> payload) {
+        for (Target target : payload) {
+            target.setTimestamp(System.currentTimeMillis());
+        }
         String json;
         try {
             json = objectMapper.writeValueAsString(payload);
