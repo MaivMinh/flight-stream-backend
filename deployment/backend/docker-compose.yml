@@ -78,7 +78,6 @@ services:
   # =======================
   # Kafka
   # =======================
-
   kafka-service-10:
     image: apache/kafka:latest
     ports:
@@ -108,6 +107,19 @@ services:
       - ./data/kafka:/var/lib/kafka/data
     networks:
       - realtime-net
+
+  # =======================
+  # Kafka Exporter
+  # =======================
+  kafka-exporter:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter
+    networks:
+      - realtime-net
+    ports:
+      - "9308:9308"
+    command:
+      - "--kafka.server=kafka-service-10:9092"
 
   # =======================
   # Simulator Service
