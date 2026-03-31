@@ -12,7 +12,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./data/nginx/logs:/var/log/nginx
+      - nginx-logs:/var/log/nginx
     depends_on:
       - realtime-1
       - realtime-2
@@ -43,7 +43,7 @@ services:
     networks:
       - realtime-net
     volumes:
-      - ./data/redis:/data
+      - redis-data:/data
     deploy:
       resources:
         limits:
@@ -105,7 +105,7 @@ services:
           cpus: "1.00"
           memory: 1536M
     volumes:
-      - ./data/kafka:/var/lib/kafka/data
+      - kafka-data:/var/lib/kafka/data
     networks:
       - realtime-net
 
@@ -286,7 +286,7 @@ services:
       - --storage.tsdb.retention.size=8GB
     volumes:
       - ./data/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./data/prometheus:/prometheus
+      - prometheus-data:/prometheus
     ports:
       - "9090:9090"
     deploy:
@@ -304,7 +304,7 @@ services:
     restart: always
     volumes:
       - ./data/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
-      - ./data/grafana:/var/lib/grafana
+      - grafana-data:/var/lib/grafana
     networks:
       - realtime-net
     ports:
@@ -321,3 +321,15 @@ services:
 networks:
   realtime-net:
     driver: bridge
+
+volumes:
+    redis-data:
+        driver: local
+    kafka-data:
+        driver: local
+    nginx-logs:
+        driver: local
+    prometheus-data:
+        driver: local
+    grafana-data:
+        driver: local
