@@ -120,6 +120,14 @@ services:
       - "9308:9308"
     command:
       - "--kafka.server=kafka-service-10:9092"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
 
   # =======================
   # Simulator Service
@@ -255,6 +263,14 @@ services:
       - "4317:4317" # OTLP gRPC receiver
       - "4318:4318" # OTLP http receiver
       - "55679:55679" # zpages extension
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1024M
+        reservations:
+          cpus: "0.50"
+          memory: 512M
 
   prometheus:
     container_name: prometheus
@@ -264,20 +280,41 @@ services:
       - realtime-net
     command:
       - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=8GB
     volumes:
       - ./data/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus:/prometheus
     ports:
       - "9090:9090"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 1536M
+        reservations:
+          cpus: "0.75"
+          memory: 768M
 
   grafana:
     container_name: grafana
     image: grafana/grafana
+    restart: always
     volumes:
       - ./data/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./data/grafana:/var/lib/grafana
     networks:
       - realtime-net
     ports:
       - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
 networks:
   realtime-net:
