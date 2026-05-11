@@ -14,19 +14,19 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - nginx-logs:/var/log/nginx
     depends_on:
-      - realtime-1
-      - realtime-2
-      - realtime-3
+      - realtime-gateway
+      - tracking-service
+      - simulator-service
     networks:
       - realtime-net
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: 256M
-        reservations:
           cpus: "0.25"
           memory: 128M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
 
   # =======================
   # Redis (Pub/Sub)
@@ -48,11 +48,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.75"
-          memory: 768M
+          cpus: "0.50"
+          memory: 384M
         reservations:
           cpus: "0.25"
-          memory: 256M
+          memory: 128M
 
   questdb:
     image: questdb/questdb:9.1.0
@@ -66,15 +66,15 @@ services:
       - "9009:9009"   # Line Protocol
       - "9003:9003"   # InfluxDB Line Protocol
     volumes:
-      - ./data/questdb:/var/lib/questdb
+      - questdb:/var/lib/questdb
     deploy:
       resources:
         limits:
-          cpus: "3.50"
-          memory: 4G
-        reservations:
           cpus: "1.50"
-          memory: 3G
+          memory: 2048M
+        reservations:
+          cpus: "1.00"
+          memory: 1024M
 
   # =======================
   # Kafka
@@ -84,7 +84,7 @@ services:
     ports:
       - "9092:9092"
     environment:
-      - KAFKA_HEAP_OPTS=-Xms756M -Xmx756M
+      - KAFKA_HEAP_OPTS=-Xms512M -Xmx512M
       - KAFKA_NODE_ID=1
       - KAFKA_PROCESS_ROLES=broker,controller
       - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
@@ -100,11 +100,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.00"
-          memory: 2560M
+          cpus: "1.50"
+          memory: 1536M
         reservations:
           cpus: "1.00"
-          memory: 1536M
+          memory: 1024M
     volumes:
       - kafka-data:/var/lib/kafka/data
     networks:
@@ -126,11 +126,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: 128M
-        reservations:
           cpus: "0.10"
           memory: 64M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
 
   # =======================
   # Simulator Service
@@ -141,22 +141,24 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
-      - INSTANCE_ID=simulator-1
+      - INSTANCE_ID=simulator-service
       - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
       - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
     depends_on:
       kafka-service-10:
         condition: service_started
+    ports:
+      - "8082:8082"
     networks:
       - realtime-net
     deploy:
       resources:
         limits:
-          cpus: "1.00"
-          memory: 768M
-        reservations:
           cpus: "0.50"
-          memory: 512M
+          memory: 384M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
 
   # =======================
@@ -168,7 +170,11 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis
-      - INSTANCE_ID=tracking-1
+      - KAFKA_CONSUMER_GROUP_ID=tracking-service
+      - KAFKA_CONSUMER_TOPIC=simulation
+      - KAFKA_CONSUMER_NUM_WORKERS=10
+      - KAFKA_CONSUMER_QUEUE_CAPACITY=10000
+      - INSTANCE_ID=tracking-service
       - QUESTDB_SENDER_CONFIG=http::addr=questdb:9000;auto_flush=off;retry_timeout=10000;
       - QUESTDB_PG_HOST=questdb
       - QUESTDB_PG_PORT=8812
@@ -186,93 +192,51 @@ services:
         condition: service_started
       kafka-service-10:
         condition: service_started
+    ports:
+      - "8081:8081"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.50"
+          memory: 2560M
+        reservations:
+          cpus: "1.50"
+          memory: 1536M
+
+
+  # =======================
+  # Realtime Services
+  # =======================
+  realtime-gateway:
+    image: maivanminh/realtime-gateway:1.0
+    restart: unless-stopped
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
+      - REDIS_HOST=redis
+      - KAFKA_CONSUMER_GROUP_ID=realtime-gateway
+      - KAFKA_CONSUMER_TOPIC=simulation
+      - KAFKA_CONSUMER_NUM_WORKERS=10
+      - KAFKA_CONSUMER_QUEUE_CAPACITY=10000
+      - INSTANCE_ID=realtime-gateway
+      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
+    depends_on:
+      kafka-service-10:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - realtime-net
     deploy:
       resources:
         limits:
           cpus: "2.00"
-          memory: 1536M
+          memory: 2048M
         reservations:
           cpus: "1.00"
-          memory: 768M
-
-  # =======================
-  # Realtime Services (x4)
-  # =======================
-  realtime-1:
-    image: maivanminh/realtime-gateway:1.0
-    restart: unless-stopped
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
-      - REDIS_HOST=redis
-      - INSTANCE_ID=realtime-1
-      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
-      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
-    depends_on:
-      kafka-service-10:
-        condition: service_started
-      redis:
-        condition: service_healthy
-    networks:
-      - realtime-net
-    deploy:
-      resources:
-        limits:
-          cpus: "2.00"
-          memory: 768M
-        reservations:
-          cpus: "1"
-          memory: 512M
-
-  realtime-2:
-    image: maivanminh/realtime-gateway:1.0
-    restart: unless-stopped
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
-      - REDIS_HOST=redis
-      - INSTANCE_ID=realtime-2
-      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
-      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
-    depends_on:
-      kafka-service-10:
-        condition: service_started
-      redis:
-        condition: service_healthy
-    networks:
-      - realtime-net
-    deploy:
-      resources:
-        limits:
-          cpus: "2.00"
-          memory: 768M
-        reservations:
-          cpus: "1"
-          memory: 512M
-
-  realtime-3:
-    image: maivanminh/realtime-gateway:1.0
-    restart: unless-stopped
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
-      - REDIS_HOST=redis
-      - INSTANCE_ID=realtime-3
-      - OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
-      - OTLP_TRACING_EXPORT_URL=http://otel-collector:4318/v1/traces
-    depends_on:
-      kafka-service-10:
-        condition: service_started
-      redis:
-        condition: service_healthy
-    networks:
-      - realtime-net
-    deploy:
-      resources:
-        limits:
-          cpus: "1.50"
-          memory: 768M
-        reservations:
-          cpus: "1"
-          memory: 512M
-
+          memory: 1024M
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.82.0
@@ -294,11 +258,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: 1024M
-        reservations:
           cpus: "0.25"
-          memory: 512M
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
 
   prometheus:
     container_name: prometheus
@@ -323,6 +287,7 @@ services:
         reservations:
           cpus: "0.50"
           memory: 768M
+
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -336,11 +301,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: 128M
-        reservations:
           cpus: "0.10"
           memory: 64M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
     command:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
@@ -360,24 +325,26 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.75"
-          memory: 512M
-        reservations:
           cpus: "0.25"
           memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
 
 networks:
   realtime-net:
     driver: bridge
 
 volumes:
-    redis-data:
-        driver: local
-    kafka-data:
-        driver: local
-    nginx-logs:
-        driver: local
-    prometheus-data:
-        driver: local
-    grafana-data:
-        driver: local
+  redis-data:
+    driver: local
+  kafka-data:
+    driver: local
+  nginx-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  questdb:
+    driver: local

@@ -46,7 +46,7 @@ public class ZigzagTrajectory implements Trajectory {
 
         double move = target.velocity * deltaMs / 1000.0;
 
-        double epsilon = Math.max(0.5, move); // dynamic threshold
+        double epsilon = Math.max(0.5, move); /// set khoảng cách tối thiểu để coi như đã tới điểm tiếp theo, tránh tình trạng target nhảy lung tung khi move quá lớn.
 
         if (dist < epsilon) {
             target.lat = next.getLat();
