@@ -30,7 +30,8 @@ public class KafkaConfig {
         config.put(ProducerConfig.ACKS_CONFIG, "all");
         config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         /// Cấu hình thêm linger và batch size để tối ưu hiệu suất gửi message. Producer sẽ gửi message khi đủ batch size hoặc sau một khoảng thời gian nhất định (linger), giúp giảm overhead của việc gửi từng message một.
-        config.put(ProducerConfig.BATCH_SIZE_CONFIG, 65536);
+        config.put(ProducerConfig.BATCH_SIZE_CONFIG, 32768); // 32 KB
+        config.put(ProducerConfig.LINGER_MS_CONFIG, 5); // 5 ms
         config.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "lz4");
         return new DefaultKafkaProducerFactory<>(config);
     }
