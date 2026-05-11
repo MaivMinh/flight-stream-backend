@@ -17,7 +17,7 @@ public class GatewayHandshakeInterceptor implements HandshakeInterceptor {
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-        log.info("Websocket handshake accepted!");
+        log.info("Received WebSocket handshake request: {}", request.getURI());
         return true;
     }
 

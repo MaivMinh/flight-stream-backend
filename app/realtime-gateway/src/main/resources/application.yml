@@ -18,7 +18,8 @@ spring:
         enabled: false
 logging:
   level:
-    net.devh.boot.grpc.server: DEBUG
+    org.springframework.web.socket: TRACE
+    org.springframework.web.servlet.handler.SimpleUrlHandlerMapping: TRACE
 
 management:
   endpoints:

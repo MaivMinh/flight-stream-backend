@@ -23,6 +23,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     protected ResponseEntity<ResponseData> handleNoResourceFoundException(NoResourceFoundException ex) {
         log.warn(ex.getMessage());
+        ex.printStackTrace();
         return buildResponse(
                 HttpStatus.NOT_FOUND,
                 "Resource not found",
