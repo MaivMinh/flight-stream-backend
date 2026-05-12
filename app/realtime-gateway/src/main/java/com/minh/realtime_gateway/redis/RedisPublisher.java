@@ -14,10 +14,10 @@ import java.util.concurrent.ExecutorService;
 public class RedisPublisher {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ChannelTopic topic;
-    private final ExecutorService redisExecutor;
+    private final ExecutorService sessionSenderExecutor;
 
     public void publish(List<Target> targets) {
-        redisExecutor.submit(() -> {
+        sessionSenderExecutor.submit(() -> {
             redisTemplate.convertAndSend(topic.getTopic(), targets);
         });
     }
