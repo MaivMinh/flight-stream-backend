@@ -23,6 +23,15 @@ public class KafkaConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    @Value("${kafka.consumer.concurrency:6}")
+    private Integer concurrency;
+
+    @Value("${kafka.consumer.group-id:tracking-service}")
+    private String groupId;
+
+    @Value("${kafka.consumer.max-poll-records:1000}")
+    private Integer maxPollRecords;
+
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> config = new HashMap<>();
@@ -49,7 +58,11 @@ public class KafkaConfig {
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, Boolean.FALSE);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
+
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         config.put(JsonDeserializer.TRUSTED_PACKAGES, "com.minh.*");
         return new DefaultKafkaConsumerFactory<>(config);
@@ -60,9 +73,9 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, Target> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
-        factory.setConcurrency(3);
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        factory.setConcurrency(concurrency);
         factory.setBatchListener(true);
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         return factory;
     }
 }

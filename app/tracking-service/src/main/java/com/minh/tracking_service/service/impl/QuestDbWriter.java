@@ -52,7 +52,6 @@ public class QuestDbWriter {
                 }
 
                 questDbSender.flush();
-                log.info("Wrote batch of {} points to QuestDB", events.size());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;

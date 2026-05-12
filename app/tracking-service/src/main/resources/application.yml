@@ -27,6 +27,12 @@ questdb:
   table: ${QUESTDB_TABLE:positions}
   retention-days: ${QUESTDB_RETENTION_DAYS:7}
 
+kafka:
+  consumer:
+    group-id: tracking-service
+    concurrency: 6
+    max-poll-records: ${KAFKA_CONSUMER_MAX_POLL_RECORDS:300}
+
 management:
   endpoints:
     web:

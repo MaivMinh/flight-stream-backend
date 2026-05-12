@@ -1,7 +1,5 @@
 package com.minh.realtime_gateway.session;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.minh.common.model.Target;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -9,7 +7,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @RequiredArgsConstructor
 public class SessionRegistry {
-    private final ObjectMapper objectMapper;
     private final SessionWrapperFactory sessionWrapperFactory;
     private final Map<String, SessionWrapper> sessions = new ConcurrentHashMap<>();
 
@@ -33,20 +30,11 @@ public class SessionRegistry {
         }
     }
 
-    public List<SessionWrapper> getAllSessions() {
-        return sessions.values().stream().toList();
+    public Collection<SessionWrapper> getAllSessions() {
+        return sessions.values();
     }
 
-    public void broadcast(List<Target> payload) {
-        for (Target target : payload) {
-            target.setTimestamp(System.currentTimeMillis());
-        }
-        String json;
-        try {
-            json = objectMapper.writeValueAsString(payload);
-        } catch (Exception e) {
-            return;
-        }
+    public void broadcast(String json) {
         TextMessage message = new TextMessage(json);
         for (SessionWrapper wrapper : getAllSessions()) {
             try {

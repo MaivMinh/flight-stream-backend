@@ -16,10 +16,12 @@ spring:
       timeout: 2000
       repositories:
         enabled: false
-logging:
-  level:
-    org.springframework.web.socket: TRACE
-    org.springframework.web.servlet.handler.SimpleUrlHandlerMapping: TRACE
+
+kafka:
+  consumer:
+    group-id: realtime-gateway
+    concurrency: 6
+    max-poll-records: ${KAFKA_CONSUMER_MAX_POLL_RECORDS:300}
 
 management:
   endpoints:

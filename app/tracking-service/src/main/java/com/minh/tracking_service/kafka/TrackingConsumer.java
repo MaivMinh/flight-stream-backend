@@ -6,6 +6,7 @@ import com.minh.tracking_service.service.BufferService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,11 +19,10 @@ public class TrackingConsumer {
 
     @KafkaListener(
             topics = KafkaTopics.SIMULATION,
-            groupId = "tracking-service",
-            containerFactory = "kafkaListenerContainerFactory",
-            concurrency = "4"
+            containerFactory = "kafkaListenerContainerFactory"
     )
-    public void consume(List<Target> targets) {
+    public void consume(List<Target> targets, Acknowledgment acknowledgment) {
         bufferService.addBatch(targets);
+        acknowledgment.acknowledge();
     }
 }
