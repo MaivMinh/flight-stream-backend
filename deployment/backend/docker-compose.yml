@@ -164,6 +164,7 @@ services:
     image: maivanminh/simulator-service:1.0
     restart: unless-stopped
     environment:
+      - TZ=UTC
       - KAFKA_BOOTSTRAP_SERVERS=kafka-service-10:9092
       - REDIS_HOST=redis-tracking
       - INSTANCE_ID=simulator-service
@@ -189,7 +190,6 @@ services:
         reservations:
           cpus: "0.25"
           memory: 256M
-
 
   # =======================
   # Tracking Service
